@@ -13,6 +13,7 @@
 		public function _main(Request $request)
 		{
 			$response = new Response();
+			$response->setCache("day");
 			$response->setResponseSubject("Noticias de hoy");
 			$response->createFromTemplate("allStories.tpl", $this->allStories());
 			return $response;
@@ -30,6 +31,7 @@
 			if (empty($request->query))
 			{
 				$response = new Response();
+				$response->setCache();
 				$response->setResponseSubject("Busqueda en blanco");
 				$response->createFromText("Su busqueda parece estar en blanco, debe decirnos sobre que tema desea leer");
 				return $response;
@@ -74,6 +76,7 @@
 			if (empty($request->query))
 			{
 				$response = new Response();
+				$response->setCache();
 				$response->setResponseSubject("Busqueda en blanco");
 				$response->createFromText("Su busqueda parece estar en blanco, debe decirnos que articulo quiere leer");
 				return $response;
@@ -93,10 +96,9 @@
 				$images = array($responseContent['img']);
 			}
 
-			$subject = "La historia que usted pidio";
-
 			$response = new Response();
-			$response->setResponseSubject($subject);
+			$response->setCache();
+			$response->setResponseSubject("La historia que usted pidio");
 			$response->createFromTemplate("story.tpl", $responseContent, $images);
 			return $response;
 		}
@@ -112,6 +114,7 @@
 			if (empty($request->query))
 			{
 				$response = new Response();
+				$response->setCache();
 				$response->setResponseSubject("Categoria en blanco");
 				$response->createFromText("Su busqueda parece estar en blanco, debe decirnos sobre que categor&iacute;a desea leer");
 				return $response;
@@ -144,25 +147,25 @@
 			// Collect saearch by term
 			$articles = array();
 
- 			$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function($item, $i) use (&$articles) 
- 			{ 
- 				// only allow news, no media or gallery 
- 				if($item->filter('.ico')->count()>0) return; 
-  
- 				// get data from each row 
- 				$title = $item->filter('h2 a')->text(); 
- 				$date = $item->filter('p.g-story-meta')->text(); 
- 				$description = $item->filter('p')->text(); 
- 				$link = $item->filter('a')->attr("href"); 
-  
- 				// store list of articles 
- 				$articles[] = array( 
- 					"pubDate" => $date, 
- 					"description" => $description, 
- 					"title"	=> $title, 
- 					"link" => $link 
- 				); 
- 			}); 
+ 			$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function($item, $i) use (&$articles)
+ 			{
+ 				// only allow news, no media or gallery
+ 				if($item->filter('.ico')->count()>0) return;
+
+ 				// get data from each row
+ 				$title = $item->filter('h2 a')->text();
+ 				$date = $item->filter('p.g-story-meta')->text();
+ 				$description = $item->filter('p')->text();
+ 				$link = $item->filter('a')->attr("href");
+
+ 				// store list of articles
+ 				$articles[] = array(
+ 					"pubDate" => $date,
+ 					"description" => $description,
+ 					"title"	=> $title,
+ 					"link" => $link
+ 				);
+ 			});
 
 
 			return $articles;
@@ -176,47 +179,8 @@
 		 */
 		private function listArticles($query)
 		{
-			// Setup crawler
-			/*$client = new Client();
-			$crawler = $client->request('GET', "http://www.granma.cu/feed"); 
-
-			// Collect articles by category
-			$articles = array();
-			$crawler->filter('channel item')->each(function($item, $i) use (&$articles, $query)
-			{
-				// if category matches, add to list of articles
-				$item->filter('category')->each(function($cat, $i) use (&$articles, $query, $item)
-				{
-					if (strtoupper($cat->text()) == strtoupper($query))
-					{
-						$title = $item->filter('title')->text();
-						$link = $this->urlSplit($item->filter('link')->text());
-						$pubDate = $item->filter('pubDate')->text();
-						$description = $item->filter('description')->text();
-						$cadenaAborrar = "/<!-- google_ad_section_start --><!-- google_ad_section_end --><p>/";
-						$description = preg_replace($cadenaAborrar, '', $description);
-						$description = preg_replace("/<\/?a[^>]*>/", '', $description);//quitamos las <a></a>
-						$description = preg_replace("/<\/?p[^>]*>/", '', $description);//quitamos las <p></p>
-						
-						$author = "desconocido";
-						if ($item->filter('dc|creator')->count() > 0)
-						{
-							$authorString = trim($item->filter('dc|creator')->text());
-							$author = "({$authorString})";
-						}
-
-						$articles[] = array(
-							"title" => $title,
-							"link" => $link,
-							"pubDate" => $pubDate,
-							"description" => $description,
-							"author" => $author
-						);
-					}
-				});
-			});*/
-			$page = file_get_contents("http://www.granma.cu/feed");
 			//tuve que usar simplexml debido a que el feed provee los datos dentro de campos cdata
+			$page = file_get_contents("http://www.granma.cu/feed");
 			$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
 			$articles = array();
@@ -227,17 +191,17 @@
 						// get all parameters
 						$title = $item->title;
 						$link = $this->urlSplit($item->link);
-						$description = $item->description;
+						$description = strip_tags($item->description);
 						$pubDate = $item->pubDate;
 						$dc = $item->children("http://purl.org/dc/elements/1.1/");
-		    			$author = $dc->creator;
-						
+						$author = $dc->creator;
+
 						$articles[] = array(
-							"title" => $title,
-							"link" => $link,
-							"pubDate" => $pubDate,
-							"description" => $description,
-							"author" => $author
+							"title" => (String)$title,
+							"link" => (String)$link,
+							"pubDate" => (String)$pubDate,
+							"description" => (String)$description,
+							"author" => (String)$author
 						);
 					}
 				}
@@ -254,80 +218,36 @@
 		 */
 		private function allStories()
 		{
-			// create a new client
-			//$client = new Client();
-			//$guzzle = $client->getClient();
-			//$guzzle->setDefaultOption('verify', false);
-			//$client->setClient($guzzle);
-
 			// create a crawler
 			$page = file_get_contents("http://www.granma.cu/feed");
-			//tuve que usar simplexml debido a que el feed provee los datos dentro de campos cdata
 			$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
-			//$crawler = new Crawler($page);
-
-			//$crawler = $client->request('GET', "http://www.granma.cu/feed"); //http://www.martinoticias.com/api/epiqq
 
 			$articles = array();
-			foreach ($content->channel->item as $item) {
+			foreach ($content->channel->item as $item)
+			{
 				// get all parameters
-				$title = $item->title;
+				$title = $this->utils->removeTildes($item->title);
 				$link = $this->urlSplit($item->link);
-				$description = $item->description;
+				$description = $this->utils->removeTildes(strip_tags($item->description));
 				$pubDate = $item->pubDate;
 				$dc = $item->children("http://purl.org/dc/elements/1.1/");
-    			$author = $dc->creator;
+				$author = $this->utils->removeTildes($dc->creator);
+
 				$category = array();
-				foreach ($item->category as $currCategory)
-				{
-					$category[] = $currCategory;
+				foreach ($item->category as $currCategory) {
+					$category[] = $this->utils->removeTildes((String)$currCategory);
 				}
-				$categoryLink = array();
 
 				$articles[] = array(
-					"title" => $title,
-					"link" => $link,
-					"pubDate" => $pubDate,
-					"description" => $description,
+					"title" => (String)$title,
+					"link" => (String)$link,
+					"pubDate" => (String)$pubDate,
+					"description" => (String)$description,
 					"category" => $category,
-					"categoryLink" => $categoryLink,
-					"author" => $author
+					"categoryLink" => array(),
+					"author" => (String)$author
 				);
 			}
-			/*$crawler->filter('channel item')->each(function($item, $i) use (&$articles)
-			{
-
-				// get all parameters
-				$title = $item->filter('title')->text();
-				$comments = $item->filter('comments')->text();
-				$pos = strpos($comments, "#");
-				$link = $this->urlSplit(substr($comments, 0, $pos));
-				$description = $item->filter('description')->text();
-				$cadenaAborrar = "/]]>/";
-				$description = preg_replace($cadenaAborrar, '', $description);
-				$description = preg_replace("/<\/?a[^>]*>/", '', $description);//quitamos las <a></a>
-				$description = preg_replace("/<\/?p[^>]*>/", '', $description);//quitamos las <p></p>
-				$pubDate = $item->filter('pubDate')->text();
-				$author = $item->filter("creator")->text();
-				$category = $item->filter('category')->each(function($category, $j) { return $category->text(); });
-
-				$categoryLink = array();
-				foreach ($category as $currCategory)
-				{
-					$categoryLink[] = $currCategory;
-				}
-
-				$articles[] = array(
-					"title" => $title,
-					"link" => $link,
-					"pubDate" => $pubDate,
-					"description" => $description,
-					"category" => $category,
-					"categoryLink" => $categoryLink,
-					"author" => $author,
-					"tests"=>print_r($category,true)
-				);
-			});*/
 
 			// return response content
 			return array("articles" => $articles);
@@ -369,9 +289,8 @@
 				// get the image
 				if ( ! empty($imgUrl))
 				{
-					$imgName = $this->utils->generateRandomHash() . "." . pathinfo($imgUrl, PATHINFO_EXTENSION);
-					$img = \Phalcon\DI\FactoryDefault::getDefault()->get('path')['root'] . "/temp/$imgName";
-					file_put_contents($img, file_get_contents($imgUrl));
+					$img = $this->utils->getTempDir() . $this->utils->generateRandomHash() . "." . pathinfo($imgUrl, PATHINFO_EXTENSION);
+					file_put_contents($img, file_get_contents("http://www.granma.cu$imgUrl"));
 					$this->utils->optimizeImage($img, 300);
 				}
 			}

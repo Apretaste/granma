@@ -13,6 +13,6 @@
 {space5}
 
 <center>
-	{button href="GRANMA" caption="M&aacute;s noticias"}
-	{button href="PIZARRA Miren esto: {$url}" caption="Compartir" color="grey"}
+	{button href="GRANMA" caption="Titulares"}
+	{button href="PIZARRA Miren este articulo del Granma: {$url}" caption="Compartir" color="grey"}
 </center>

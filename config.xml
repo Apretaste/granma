@@ -1,9 +1,6 @@
 <service>
 	<serviceName>granma</serviceName>
-	<serviceAliases>
-		<alias>diariogranma</alias>
-	</serviceAliases>
-	<serviceDescription>Muestra los titulares del diario Granma de Cuba y permite leer las noticias publicadas por este diario.</serviceDescription>
+	<serviceDescription>Muestra los titulares del Granma y permite leer las noticias publicadas por este diario.</serviceDescription>
 	<creatorEmail>jaikerkings@yahoo.es</creatorEmail>
 	<serviceCategory>informativo</serviceCategory>
 	<serviceUsage>

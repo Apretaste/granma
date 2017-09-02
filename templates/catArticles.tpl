@@ -6,16 +6,13 @@
 
 {foreach from=$articles item=article}
 	<b>{link href="GRANMA HISTORIA {$article['link']}" caption="{$article['title']}"}</b><br/>
-	{space5}
 	{$article['description']|truncate:200:" ..."}<br/>
-	<small>
-		<font color="gray">{$article['author']}, {$article['pubDate']|date_format}</font>
-	</small>
+	<small><font color="gray">{$article['author']}, {$article['pubDate']|date_format}</font></small>
 	{space15}
 {/foreach}
 
 {space5}
 
 <center>
-	{button href="GRANMA" caption="M&aacute;s noticias"}
+	{button href="GRANMA" caption="Titulares"}
 </center>
