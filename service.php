@@ -11,7 +11,7 @@ class Granma extends Service
 	private function log($msg)
 	{
 		$f = fopen("../logs/granma.log", "a");
-		fputs($f, date("Y-m-d h:i:s - ".$msg."\n");
+		fputs($f, date("Y-m-d h:i:s - ").$msg."\n");
 		fclose($f);
 	}
 
@@ -297,14 +297,14 @@ class Granma extends Service
 	 */
 	private function allStories()
 	{
-		$f = fopen("../logs/granma.log", "a");
-
 		// create a crawler
 		$info = [];
 		$page = $this->getUrl("http://www.granma.cu/feed", $info);
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
-		fputs($f, "allStories: ".serialize($info)."\n");
-		fputs($f, substr($page, 0, 300)."\n");
+
+		$this->log("allStories: ".serialize($info)."\n");
+		$this->log(substr($page, 0, 300)."\n");
+
 		$articles = array();
 		foreach ($content->channel->item as $item) {
 			// get all parameters
@@ -330,7 +330,7 @@ class Granma extends Service
 				"author" => (String)$author
 			);
 		}
-		fclose($f);
+
 		// return response content
 		return array("articles" => $articles);
 	}
