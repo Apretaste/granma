@@ -288,9 +288,10 @@ class Granma extends Service
 		$f = fopen("../logs/granma.log", "a");
 
 		// create a crawler
-		$page = $this->getUrl("http://www.granma.cu/feed");
+		$info = [];
+		$page = $this->getUrl("http://www.granma.cu/feed",, $info);
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
-		fputs($f, "allStories: \n");
+		fputs($f, "allStories: ".serialize($info)."\n");
 		fputs($f, substr($page, 0, 300)."\n");
 		$articles = array();
 		foreach ($content->channel->item as $item) {
