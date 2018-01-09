@@ -79,7 +79,7 @@ class Granma extends Service
 		$html = curl_exec($ch);
 		$info = curl_getinfo($ch);
 
-		if (isset($info['redirect_url']) && $info['redirect_url'] != $url)
+		if (isset($info['redirect_url']) && $info['redirect_url'] != $url && ! empty($info['redirect_url']))
 		{
 			$this->log("Granma::getUrl: REDIRECT TO {$info['redirect_url']} \n");
 			return $this->getUrl($info['redirect_url'], $info);
