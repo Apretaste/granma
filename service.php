@@ -289,7 +289,7 @@ class Granma extends Service
 
 		// create a crawler
 		$info = [];
-		$page = $this->getUrl("http://www.granma.cu/feed",, $info);
+		$page = $this->getUrl("http://www.granma.cu/feed", $info);
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 		fputs($f, "allStories: ".serialize($info)."\n");
 		fputs($f, substr($page, 0, 300)."\n");
