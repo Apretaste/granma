@@ -8,6 +8,13 @@ class Granma extends Service
 
 	public $client;
 
+	private function log($msg)
+	{
+		$f = fopen("../logs/granma.log", "a");
+		fputs($f, date("Y-m-d h:i:s - ".$msg."\n");
+		fclose($f);
+	}
+
 	/**
 	 * Crawler client
 	 *
@@ -32,6 +39,8 @@ class Granma extends Service
 	 */
 	protected function getCrawler($url = "")
 	{
+		$this->log("Granma::getCrawler: $url \n");
+
 		$url = trim($url);
 		if ($url != '' && $url[0] == '/') $url = substr($url, 1);
 
@@ -42,6 +51,8 @@ class Granma extends Service
 
 	private function getUrl($url, &$info = [])
 	{
+		$this->log("Granma::getUrl: $url \n");
+
 		$url = str_replace("//", "/", $url);
 		$url = str_replace("http:/","http://", $url);
 		$url = str_replace("https:/","https://", $url);
@@ -62,16 +73,17 @@ class Granma extends Service
 			$hhs[] = "$key: $val";
 
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $hhs);
-
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
 		$html = curl_exec($ch);
-
 		$info = curl_getinfo($ch);
 
 		if (isset($info['redirect_url']) && $info['redirect_url'] != $url)
+		{
+			$this->log("Granma::getUrl: REDIRECT TO {$info['redirect_url']} \n");
 			return $this->getUrl($info['redirect_url'], $info);
+		}
 
 		curl_close($ch);
 
