@@ -210,9 +210,9 @@ class Granma extends Service
 	{
 		// Setup crawler
 		$url = "http://www.granma.cu/archivo?q=" . urlencode($query);
-		$crawler = $this->getCrawler('GET', $url);
+		$crawler = $this->getCrawler($url);
 
-		// Collect saearch by term
+		// Collect search by term
 		$articles = array();
 
 		$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function ($item, $i) use (&$articles) {
@@ -286,7 +286,7 @@ class Granma extends Service
 	private function allStories()
 	{
 		// create a crawler
-		$page = file_get_contents("http://www.granma.cu/feed");
+		$page = $this->getUrl("http://www.granma.cu/feed");
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
 		$articles = array();
@@ -327,14 +327,8 @@ class Granma extends Service
 	 */
 	private function story($query)
 	{
-		// create a new client
-		$client = new Client();
-		$guzzle = $client->getClient();
-		$guzzle->setDefaultOption('verify', false);
-		$client->setClient($guzzle);
-
 		// create a crawler
-		$crawler = $client->request('GET', "http://www.granma.cu/$query");
+		$crawler = $this->getCrawler("http://www.granma.cu/$query");
 
 		// search for title
 		$title = $crawler->filter('div.g-story-meta h1.g-story-heading')->text();
@@ -346,7 +340,6 @@ class Granma extends Service
 
 		// get the images
 		$imageObj = $crawler->filter('div.image img');
-		$imgUrl = "";
 		$imgAlt = "";
 		$img = "";
 		if ($imageObj->count() != 0) {
