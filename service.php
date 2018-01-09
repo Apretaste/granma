@@ -291,7 +291,7 @@ class Granma extends Service
 		$page = $this->getUrl("http://www.granma.cu/feed");
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 		fputs($f, "allStories: \n");
-		fputs($f, susbtr($page, 0, 300)."\n");
+		fputs($f, substr($page, 0, 300)."\n");
 		$articles = array();
 		foreach ($content->channel->item as $item) {
 			// get all parameters
