@@ -408,7 +408,7 @@ class Granma extends Service
 	 * Return a generic error email, usually for try...catch blocks
 	 *
 	 * @auhor salvipascual
-	 * @return Respose
+	 * @return Response
 	 */
 	private function respondWithError()
 	{
