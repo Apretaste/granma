@@ -369,7 +369,6 @@ class Granma extends Service
 			if (!empty($imgUrl)) {
 				$img = $this->utils->getTempDir() . $this->utils->generateRandomHash() . "." . pathinfo($imgUrl, PATHINFO_EXTENSION);
 				file_put_contents($img, file_get_contents("http://www.granma.cu$imgUrl"));
-				$this->utils->optimizeImage($img, 300);
 			}
 		}
 
