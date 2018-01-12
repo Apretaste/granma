@@ -21,4 +21,6 @@
 		{/foreach}
 	</small>
 	{space15}
+	{foreachelse}
+	<p>No hay art&iacute;culos que mostrar. Intente otra vez o realice otra b&uacute;squeda.</p>
 {/foreach}

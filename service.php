@@ -306,6 +306,9 @@ class Granma extends Service
 		$this->log(substr($page, 0, 300)."\n");
 
 		$articles = array();
+		if (!isset($content->channel))
+			return ["articles" => []];
+
 		foreach ($content->channel->item as $item) {
 			// get all parameters
 			$title = $this->utils->removeTildes($item->title);
