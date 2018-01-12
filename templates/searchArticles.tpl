@@ -5,6 +5,8 @@
 	<b>{link href="GRANMA HISTORIA {$article['link']}" caption="{$article['title']}"}</b><br/>
 	{$article['description']|truncate:200:" ..."}<br/>
 	{space15}
+{foreachelse}
+	<p>No hay art&iacute;culos que mostrar. Intente otra vez o realice otra b&uacute;squeda.</p>
 {/foreach}
 
 {space5}
