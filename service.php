@@ -1,107 +1,31 @@
 <?php
 
-use Goutte\Client;
-use GuzzleHttp\Client as GuzzleClient;
-
+/**
+ * Apretaste
+ *
+ * Granma Service
+ *
+ * @author @Reyes
+ * @author @kumahacker
+ * @author @salvipascual
+ *
+ * @version 2.0
+ */
 class Granma extends Service
 {
-
-	public $client;
-
-	private function log($msg)
-	{
-		$f = fopen("../logs/granma.log", "a");
-		fputs($f, date("Y-m-d h:i:s - ").$msg."\n");
-		fclose($f);
-	}
-
-	/**
-	 * Crawler client
-	 *
-	 * @return \Goutte\Client
-	 */
-	public function getClient()
-	{
-		if (is_null($this->client)) {
-			$this->client = new Client();
-			$guzzle = new GuzzleClient(["verify" => false]);
-			$this->client->setClient($guzzle);
-		}
-		return $this->client;
-	}
-
-	/**
-	 * Get crawler for URL
-	 *
-	 * @param string $url
-	 *
-	 * @return \Symfony\Component\DomCrawler\Crawler
-	 */
-	protected function getCrawler($url = "")
-	{
-		$this->log("Granma::getCrawler: $url \n");
-
-		$url = trim($url);
-		if ($url != '' && $url[0] == '/') $url = substr($url, 1);
-
-		$crawler = $this->getClient()->request("GET", $url);
-
-		return $crawler;
-	}
-
-	private function getUrl($url, &$info = [])
-	{
-		$this->log("Granma::getUrl: $url \n");
-
-		$url = str_replace("//", "/", $url);
-		$url = str_replace("http:/","http://", $url);
-		$url = str_replace("https:/","https://", $url);
-
-		$ch = curl_init();
-
-		curl_setopt($ch, CURLOPT_URL, $url);
-
-		$default_headers = [
-			"Cache-Control" => "max-age=0",
-			"Origin" => "{$url}",
-			"User-Agent" => "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36",
-			"Content-Type" => "application/x-www-form-urlencoded"
-		];
-
-		$hhs = [];
-		foreach ($default_headers as $key => $val)
-			$hhs[] = "$key: $val";
-
-		curl_setopt($ch, CURLOPT_HTTPHEADER, $hhs);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-		$html = curl_exec($ch);
-		$info = curl_getinfo($ch);
-
-		if (isset($info['redirect_url']) && $info['redirect_url'] != $url && ! empty($info['redirect_url']))
-		{
-			$this->log("Granma::getUrl: REDIRECT TO {$info['redirect_url']} \n");
-			return $this->getUrl($info['redirect_url'], $info);
-		}
-
-		curl_close($ch);
-
-		return $html;
-	}
 
 	/**
 	 * Function executed when the service is called
 	 *
-	 * @param Request
 	 * @return Response
-	 * */
-	public function _main(Request $request)
+	 */
+	public function _main()
 	{
 		$response = new Response();
 		$response->setCache("day");
 		$response->setResponseSubject("Noticias de hoy");
 		$response->createFromTemplate("allStories.tpl", $this->allStories());
+
 		return $response;
 	}
 
@@ -216,18 +140,18 @@ class Granma extends Service
 	 * Search stories
 	 *
 	 * @param String
-	 * @return Array
+	 * @return array
 	 * */
 	private function searchArticles($query)
 	{
 		// Setup crawler
 		$url = "http://www.granma.cu/archivo?q=" . urlencode($query);
-		$crawler = $this->getCrawler($url);
+		$crawler = (new Krawler($url))->getCrawler($url);
 
 		// Collect search by term
 		$articles = array();
 
-		$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function ($item, $i) use (&$articles) {
+		$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function (\Symfony\Component\DomCrawler\Crawler $item) use (&$articles) {
 			// only allow news, no media or gallery
 			if ($item->filter('.ico')->count() > 0) return;
 
@@ -246,26 +170,26 @@ class Granma extends Service
 			);
 		});
 
-
 		return $articles;
 	}
 
 	/**
 	 * Get the array of news by content
 	 *
-	 * @param String
-	 * @return Array
+	 * @param String $query
+	 *
+	 * @return array
 	 */
 	private function listArticles($query)
 	{
-		//tuve que usar simplexml debido a que el feed provee los datos dentro de campos cdata
-		$page = $this->getUrl("http://www.granma.cu/feed");
+		$page = (new Krawler("http://www.granma.cu/feed"))->getRemoteContent();
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
-		$articles = array();
-		foreach ($content->channel->item as $item) {
+		$articles = [];
+		$items = $content->children('channel')->children('item');
+		foreach ($items as $item) {
 			// if category matches, add to list of articles
-			foreach ($item->category as $cat) {
+			foreach ($item->children('category') as $cat) {
 				if (strtoupper($cat) == strtoupper($query)) {
 					// get all parameters
 					$title = $item->title;
@@ -287,29 +211,26 @@ class Granma extends Service
 		}
 
 		// Return response content
-		return array("articles" => $articles);
+		return ["articles" => $articles];
 	}
 
 	/**
 	 * Get all stories from a query
 	 *
-	 * @return Array
+	 * @return array
 	 */
 	private function allStories()
 	{
 		// create a crawler
 		$info = [];
-		$page = $this->getUrl("http://www.granma.cu/feed", $info);
+		$page = (new Krawler())->getRemoteContent("http://www.granma.cu/feed", $info);
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
-
-		$this->log("allStories: ".serialize($info)."\n");
-		$this->log(substr($page, 0, 300)."\n");
 
 		$articles = array();
 		if (!isset($content->channel))
 			return ["articles" => []];
 
-		foreach ($content->channel->item as $item) {
+		foreach ($content->children('channel')->children('item') as $item) {
 			// get all parameters
 			$title = $this->utils->removeTildes($item->title);
 			$link = $this->urlSplit($item->link);
@@ -335,19 +256,19 @@ class Granma extends Service
 		}
 
 		// return response content
-		return array("articles" => $articles);
+		return ["articles" => $articles];
 	}
 
 	/**
 	 * Get an specific news to display
 	 *
 	 * @param String
-	 * @return Array
+	 * @return array
 	 */
 	private function story($query)
 	{
 		// create a crawler
-		$crawler = $this->getCrawler("http://www.granma.cu/$query");
+		$crawler = (new Krawler("http://www.granma.cu/$query"))->getCrawler();
 
 		// search for title
 		$title = $crawler->filter('div.g-story-meta h1.g-story-heading')->text();
