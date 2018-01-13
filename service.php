@@ -149,7 +149,7 @@ class Granma extends Service
 		$crawler = (new Krawler($url))->getCrawler($url);
 
 		// Collect search by term
-		$articles = array();
+		$articles = [];
 
 		$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function (\Symfony\Component\DomCrawler\Crawler $item) use (&$articles) {
 			// only allow news, no media or gallery
@@ -186,10 +186,9 @@ class Granma extends Service
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
 		$articles = [];
-		$items = $content->children('channel')->children('item');
-		foreach ($items as $item) {
+		foreach ($content->channel->item as $item) {
 			// if category matches, add to list of articles
-			foreach ($item->children('category') as $cat) {
+			foreach ($item->category as $cat) {
 				if (strtoupper($cat) == strtoupper($query)) {
 					// get all parameters
 					$title = $item->title;
@@ -223,14 +222,18 @@ class Granma extends Service
 	{
 		// create a crawler
 		$info = [];
-		$page = (new Krawler())->getRemoteContent("http://www.granma.cu/feed", $info);
+		$page = (new Krawler())->getRemoteContent("http://www.granma.cu/feed", $info/*, [
+			"host" => "127.0.0.1:8082",
+			"type" => CURLPROXY_SOCKS5
+		]*/);
+
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
-		$articles = array();
+		$articles = [];
 		if (!isset($content->channel))
 			return ["articles" => []];
 
-		foreach ($content->children('channel')->children('item') as $item) {
+		foreach ($content->channel->item as $item) {
 			// get all parameters
 			$title = $this->utils->removeTildes($item->title);
 			$link = $this->urlSplit($item->link);
@@ -244,7 +247,7 @@ class Granma extends Service
 				$category[] = $this->utils->removeTildes((String)$currCategory);
 			}
 
-			$articles[] = array(
+			$articles[] = [
 				"title" => (String)$title,
 				"link" => (String)$link,
 				"pubDate" => (String)$pubDate,
@@ -252,7 +255,7 @@ class Granma extends Service
 				"category" => $category,
 				"categoryLink" => array(),
 				"author" => (String)$author
-			);
+			];
 		}
 
 		// return response content
@@ -295,20 +298,20 @@ class Granma extends Service
 
 		// get the array of paragraphs of the body
 		$paragraphs = $crawler->filter('div.story-body-text.story-content p');
-		$content = array();
+		$content = [];
 		foreach ($paragraphs as $p) {
 			$content[] = trim($p->textContent);
 		}
 
 		// create a json object to send to the template
-		return array(
+		return [
 			"title" => $title,
 			"intro" => $intro,
 			"img" => $img,
 			"imgAlt" => $imgAlt,
 			"content" => $content,
 			"url" => "http://www.granma.cu/$query"
-		);
+		];
 	}
 
 	/**
