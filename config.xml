@@ -1,6 +1,0 @@
-<service>
-	<serviceName>granma</serviceName>
-	<serviceDescription>Muestra los titulares del Granma y permite leer las noticias publicadas en el Granma</serviceDescription>
-	<creatorEmail>salvi@apretaste.com</creatorEmail>
-	<serviceCategory>informativo</serviceCategory>
-</service>

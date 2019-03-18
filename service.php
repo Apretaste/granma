@@ -1,5 +1,6 @@
 <?php
-
+use Goutte\Client;
+use Symfony\Component\DomCrawler\Crawler;
 /**
  * Apretaste
  *
@@ -11,7 +12,7 @@
  *
  * @version 2.0
  */
-class Granma extends Service
+class Service
 {
 
 	/**
@@ -19,14 +20,14 @@ class Granma extends Service
 	 *
 	 * @return Response
 	 */
-	public function _main()
+	public function _main(Request $request, Response $response)
 	{
-		$response = new Response();
-		$response->setCache("day");
-		$response->setResponseSubject("Noticias de hoy");
-		$response->createFromTemplate("allStories.tpl", $this->allStories());
+		$pathToService = Utils::getPathToService($response->serviceName);
+	    $response->setCache("day");
+		$response->setLayout('granma.ejs');			
+		$response->setTemplate("allStories.ejs", $this->allStories(), ["$pathToService/images/granma-logo.png"]);
 
-		return $response;
+		
 	}
 
 	/**
@@ -35,41 +36,44 @@ class Granma extends Service
 	 * @param Request
 	 * @return Response
 	 * */
-	public function _buscar(Request $request)
+	public function _buscar(Request $request, Response $response)
 	{
+		$buscar = $request->input->data->searchQuery;
+		$isCategory = $request->input->data->isCategory == "true";
 		// no allow blank entries
-		if (empty($request->query)) {
-			$response = new Response();
-			$response->setCache();
-			$response->setResponseSubject("Busqueda en blanco");
-			$response->createFromText("Su busqueda parece estar en blanco, debe decirnos sobre que tema desea leer");
-			return $response;
+		if(empty($buscar)){
+			$response->setLayout('granma.ejs');
+			$response->setTemplate('text.ejs', [
+				"title" => "Su busqueda parece estar en blanco",
+				"body" => "debe decirnos sobre que tema desea leer"
+			]);
+
+			return;
 		}
 
 		// search by the query
-		try {
-			$articles = $this->searchArticles($request->query);
-		} catch (Exception $e) {
-			return $this->respondWithError();
-		}
-
+		$articles = $this->searchArticles($buscar);
+		
 		// error if the searche return empty
-		if (empty($articles)) {
-			$response = new Response();
-			$response->setResponseSubject("Su busqueda no genero resultados");
-			$response->createFromText("Su busqueda <b>{$request->query}</b> no gener&oacute; ning&uacute;n resultado. Por favor cambie los t&eacute;rminos de b&uacute;squeda e intente nuevamente.");
-			return $response;
+		if(empty($articles))
+		{
+			$response->setLayout('granma.ejs');
+			$response->setTemplate("text.ejs", [
+				"title" => "Su busqueda parece estar en blanco",
+				"body" => html_entity_decode("Su busqueda no gener&oacute; ning&uacute;n resultado. Por favor cambie los t&eacute;rminos de b&uacute;squeda e intente nuevamente.")
+			]);
+
+			return;
 		}
-
-		$responseContent = array(
+        
+		$responseContent = [
 			"articles" => $articles,
-			"search" => $request->query
-		);
+			"isCategory" => $isCategory,
+			"search" => $buscar
+		];
 
-		$response = new Response();
-		$response->setResponseSubject("Buscar: " . $request->query);
-		$response->createFromTemplate("searchArticles.tpl", $responseContent);
-		return $response;
+		$response->setLayout('granma.ejs');
+		$response->setTemplate("searchArticles.ejs", $responseContent);
 	}
 
 	/**
@@ -78,92 +82,71 @@ class Granma extends Service
 	 * @param Request
 	 * @return Response
 	 * */
-	public function _historia(Request $request)
+	public function _historia(Request $request, Response $response)
 	{
-		// no allow blank entries
-		if (empty($request->query)) {
-			$response = new Response();
-			$response->setCache();
-			$response->setResponseSubject("Busqueda en blanco");
-			$response->createFromText("Su busqueda parece estar en blanco, debe decirnos que articulo quiere leer");
-			return $response;
-		}
+		$history = $request->input->data->historia;
 
 		// send the actual response
-		try {
-			$responseContent = $this->story($request->query);
-		} catch (Exception $e) {
-			return $this->respondWithError();
-		}
+		$responseContent = $this->story($history);
 
 		// get the image if exist
 		$images = array();
-		if (!empty($responseContent['img'])) {
-			$images = array($responseContent['img']);
-		}
+		if (!empty($responseContent['img'])) $images = array($responseContent['img']);
 
-		$response = new Response();
 		$response->setCache();
-		$response->setResponseSubject("La historia que usted pidio");
-		$response->createFromTemplate("story.tpl", $responseContent, $images);
-		return $response;
-	}
+		$response->setTemplate("story.ejs", $responseContent, $images);
 
-	/**
-	 * Call list by categoria
-	 *
-	 * @param Request
-	 * @return Response
-	 * */
-	public function _categoria(Request $request)
-	{
-		if (empty($request->query)) {
-			$response = new Response();
-			$response->setCache();
-			$response->setResponseSubject("Categoria en blanco");
-			$response->createFromText("Su busqueda parece estar en blanco, debe decirnos sobre que categor&iacute;a desea leer");
-			return $response;
+		if(isset($request->input->data->search)){
+			$isCategory = $request->input->data->isCategory;
+			$responseContent['backButton'] = "{'command':'GRANMA BUSCAR', 'data':{'searchQuery':'{$request->input->data->search}', 'isCategory':$isCategory}}";
 		}
+		else $responseContent['backButton'] = "{'command':'GRANMA'}";
 
-		$responseContent = array(
-			"articles" => $this->listArticles($request->query)["articles"],
-			"category" => $request->query
-		);
-
-		$response = new Response();
-		$response->setResponseSubject("Categoria: " . $request->query);
-		$response->createFromTemplate("catArticles.tpl", $responseContent);
-		return $response;
+		$response->setCache();
+		$response->setLayout('granma.ejs');
+		$response->setTemplate("story.ejs", $responseContent, $images);
+		
 	}
 
 	/**
 	 * Search stories
 	 *
 	 * @param String
+	 *
 	 * @return array
-	 * */
+	 */
 	private function searchArticles($query)
 	{
 		// Setup crawler
-		$url = "http://www.granma.cu/archivo?q=" . urlencode($query);
-		$crawler = (new Krawler($url))->getCrawler($url);
+		$client = new Client();
+		$crawler = $client->request('GET',"http://www.granma.cu/archivo?q=" . urlencode($query));
 
 		// Collect search by term
 		$articles = [];
 
-		$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function (\Symfony\Component\DomCrawler\Crawler $item) use (&$articles) {
+		$crawler->filter('div.col-md-12.g-searchpage-results article.g-searchpage-story')->each(function ($item) use (&$articles) {
 			// only allow news, no media or gallery
 			if ($item->filter('.ico')->count() > 0) return;
 
 			// get data from each row
 			$title = $item->filter('h2 a')->text();
-			$date = $item->filter('p.g-story-meta')->text();
+			$info = $item->filter('p.g-story-meta')->text();
+			$info = explode("de",$info);
+			$day = trim($info[0]);
+			$month = trim($info[1]);
+			$info = explode("@",$info[2]);
+			$year = trim($info[0]);
+			$info = explode("|",$info[1]);
+			$hour = trim($info[0]);
+			$author = trim($info[1]);
+			$info = "$month $day, $year. $hour &bull; <i>$author</i>";
+
 			$description = $item->filter('p')->text();
 			$link = $item->filter('a')->attr("href");
 
 			// store list of articles
 			$articles[] = array(
-				"pubDate" => $date,
+				"pubDate" => $info,
 				"description" => $description,
 				"title" => $title,
 				"link" => $link
@@ -180,11 +163,12 @@ class Granma extends Service
 	 *
 	 * @return array
 	 */
-	private function listArticles($query)
+	private function searchByCategory($query)
 	{
-		$page = (new Krawler("http://www.granma.cu/feed"))->getRemoteContent();
+		$client = new Client();
+		$page = $client->request('GET',"http://www.granma.cu/feed");
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
-
+die(var_dump($content));
 		$articles = [];
 		foreach ($content->channel->item as $item) {
 			// if category matches, add to list of articles
@@ -193,6 +177,7 @@ class Granma extends Service
 					// get all parameters
 					$title = $item->title;
 					$link = $this->urlSplit($item->link);
+					
 					$description = strip_tags($item->description);
 					$pubDate = $item->pubDate;
 					$dc = $item->children("http://purl.org/dc/elements/1.1/");
@@ -221,11 +206,7 @@ class Granma extends Service
 	private function allStories()
 	{
 		// create a crawler
-		$info = [];
-		$page = (new Krawler())->getRemoteContent("http://www.granma.cu/feed", $info/*, [
-			"host" => "127.0.0.1:8082",
-			"type" => CURLPROXY_SOCKS5
-		]*/);
+		$page = file_get_contents("http://www.granma.cu/feed");
 
 		$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
@@ -235,16 +216,19 @@ class Granma extends Service
 
 		foreach ($content->channel->item as $item) {
 			// get all parameters
-			$title = $this->utils->removeTildes($item->title);
+			$title = $item->title;
 			$link = $this->urlSplit($item->link);
-			$description = $this->utils->removeTildes(strip_tags($item->description));
+			$description = strip_tags($item->description);
+			setlocale(LC_ALL, 'es_ES.UTF-8');
 			$pubDate = $item->pubDate;
+			$pubDate = strftime("%B %d, %Y.",strtotime($pubDate))." ".date_format((new DateTime($pubDate)),'h:i a');
 			$dc = $item->children("http://purl.org/dc/elements/1.1/");
-			$author = $this->utils->removeTildes($dc->creator);
+			$author = $dc->creator;
 
 			$category = array();
 			foreach ($item->category as $currCategory) {
-				$category[] = $this->utils->removeTildes((String)$currCategory);
+				$category[] = (String)$currCategory;
+				
 			}
 
 			$articles[] = [
@@ -270,8 +254,8 @@ class Granma extends Service
 	 */
 	private function story($query)
 	{
-		// create a crawler
-		$crawler = (new Krawler("http://www.granma.cu/$query"))->getCrawler();
+		$client = new Client();
+		$crawler = $client->request('GET',"http://www.granma.cu/$query");
 
 		// search for title
 		$title = $crawler->filter('div.g-story-meta h1.g-story-heading')->text();
@@ -291,13 +275,13 @@ class Granma extends Service
 
 			// get the image
 			if (!empty($imgUrl)) {
-				$img = $this->utils->getTempDir() . $this->utils->generateRandomHash() . "." . pathinfo($imgUrl, PATHINFO_EXTENSION);
+				$img = Utils::getTempDir() . Utils::generateRandomHash() . "." . pathinfo($imgUrl, PATHINFO_EXTENSION);
 				file_put_contents($img, file_get_contents("http://www.granma.cu$imgUrl"));
 			}
 		}
 
 		// get the array of paragraphs of the body
-		$paragraphs = $crawler->filter('div.story-body-text.story-content p');
+		$paragraphs = $crawler->filter('div.story-body-textt p');
 		$content = [];
 		foreach ($paragraphs as $p) {
 			$content[] = trim($p->textContent);
@@ -340,9 +324,7 @@ class Granma extends Service
 	{
 		error_log("WARNING: ERROR ON SERVICE GRANMA");
 
-		$response = new Response();
-		$response->setResponseSubject("Error en peticion");
 		$response->createFromText("Lo siento pero hemos tenido un error inesperado. Enviamos una peticion para corregirlo. Por favor intente nuevamente mas tarde.");
-		return $response;
+		
 	}
 }
