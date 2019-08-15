@@ -1,16 +1,18 @@
 $(document).ready(function(){
-    $('.materialboxed').materialbox();
-    $('.modal').modal();
-  });
-  
+	$('.materialboxed').materialbox();
+	$('.modal').modal();
+});
+
 function sendSearch() {
-  let query = $('#searchQuery').val().trim();
-  if(query.length >= 2){
-      apretaste.send({
-          'command':'GRANMA BUSCAR',
-          'data':{'searchQuery' : query, 'isCategory':false}
-      });
-  }
-    else
-        showToast('Minimo 2 caracteres');
+	var query = $('#searchQuery').val().trim();
+
+	if(query.length <= 5) {
+		M.toast({html: 'Mínimo 2 caracteres'});
+		return false;
+	}
+
+	apretaste.send({
+		'command':'GRANMA BUSCAR',
+		'data':{'searchQuery':query, 'isCategory':false}
+	});
 }
