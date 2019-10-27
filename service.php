@@ -22,7 +22,7 @@ class Service
 		$pathToService = Utils::getPathToService($response->serviceName);
 
 	    $response->setCache("day");
-		$response->setLayout('granma.ejs');			
+		$response->setLayout('granma.ejs');
 		$response->setTemplate("allStories.ejs", $this->allStories());
 	}
 
@@ -48,7 +48,7 @@ class Service
 
 		// search by the query
 		$articles = $this->search($buscar);
-		
+
 		// error if the searche return empty
 		if(empty($articles)) {
 			$response->setLayout('granma.ejs');
@@ -57,7 +57,7 @@ class Service
 				"body" => html_entity_decode("Su busqueda no gener&oacute; ning&uacute;n resultado. Por favor cambie los t&eacute;rminos de b&uacute;squeda e intente nuevamente.")
 			]);
 		}
-        
+
 		$content = [
 			"articles" => $articles,
 			"isCategory" => $isCategory,
@@ -72,8 +72,11 @@ class Service
 	 * Call to show the news
 	 *
 	 * @param Request
+	 *
 	 * @return Response
-	 * */
+	 *
+	 * @throws \Exception
+	 */
 	public function _historia(Request $request, Response $response)
 	{
 		// send the actual response
@@ -90,6 +93,8 @@ class Service
 		$response->setCache('year');
 		$response->setLayout('granma.ejs');
 		$response->setTemplate("story.ejs", $content, $images);
+
+		Challenges::complete('read-granma', $request->person->id);
 	}
 
 	/**
