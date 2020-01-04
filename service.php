@@ -1,7 +1,9 @@
 <?php
 
 use Goutte\Client;
-use Symfony\Component\DomCrawler\Crawler;
+use Apretaste\Request;
+use Apretaste\Response;
+use Apretaste\Challenges;
 
 /**
  * Granma Service
@@ -14,13 +16,9 @@ class Service
 {
 	/**
 	 * Function executed when the service is called
-	 *
-	 * @return Response
 	 */
-	public function _main(Request $request, Response $response)
+	public function _main(Request $request, Response &$response)
 	{
-		$pathToService = Utils::getPathToService($response->serviceName);
-
 	    $response->setCache("day");
 		$response->setLayout('granma.ejs');
 		$response->setTemplate("allStories.ejs", $this->allStories());
@@ -29,10 +27,12 @@ class Service
 	/**
 	 * Call to show the news
 	 *
-	 * @param Request
-	 * @return Response
-	 * */
-	public function _buscar(Request $request, Response $response)
+	 * @param \Apretaste\Request  $request
+	 * @param \Apretaste\Response $response
+	 *
+	 * @throws \Framework\Alert
+	 */
+	public function _buscar(Request $request, Response &$response)
 	{
 		$buscar = $request->input->data->searchQuery;
 		$isCategory = $request->input->data->isCategory == "true";
@@ -40,10 +40,11 @@ class Service
 		// no allow blank entries
 		if(empty($buscar)){
 			$response->setLayout('granma.ejs');
-			return $response->setTemplate('text.ejs', [
+			$response->setTemplate('text.ejs', [
 				"title" => "Su busqueda parece estar en blanco",
 				"body" => "debe decirnos sobre que tema desea leer"
 			]);
+			return;
 		}
 
 		// search by the query
@@ -52,10 +53,11 @@ class Service
 		// error if the searche return empty
 		if(empty($articles)) {
 			$response->setLayout('granma.ejs');
-			return $response->setTemplate("text.ejs", [
+			$response->setTemplate("text.ejs", [
 				"title" => "Su busqueda parece estar en blanco",
 				"body" => html_entity_decode("Su busqueda no gener&oacute; ning&uacute;n resultado. Por favor cambie los t&eacute;rminos de b&uacute;squeda e intente nuevamente.")
 			]);
+			return;
 		}
 
 		$content = [
@@ -73,11 +75,9 @@ class Service
 	 *
 	 * @param Request
 	 *
-	 * @return Response
-	 *
 	 * @throws \Exception
 	 */
-	public function _historia(Request $request, Response $response)
+	public function _historia(Request $request, Response &$response)
 	{
 		// send the actual response
 		$content = $this->story($request->input->data->historia);
@@ -101,12 +101,13 @@ class Service
 	 * Search stories
 	 *
 	 * @param String
-	 * @return array
+	 *
+	 * @return array|mixed
 	 */
 	private function search($query)
 	{
 		// get content from cache
-		$cache = Utils::getTempDir() . "granma_" . md5($query) . date("Ymd") . ".cache";
+		$cache = TEMP_PATH . "granma_" . md5($query) . date("Ymd") . ".cache";
 		if(file_exists($cache)) $articles = unserialize(file_get_contents($cache));
 
 		// crawl the data from the web
@@ -158,11 +159,12 @@ class Service
 	 * Get all stories from a query
 	 *
 	 * @return array
+	 * @throws \Exception
 	 */
 	private function allStories()
 	{
 		// get content from cache
-		$cache = Utils::getTempDir() . "granma_" . date("Ymd") . ".cache";
+		$cache = TEMP_PATH . "granma_" . date("Ymd") . ".cache";
 		if(file_exists($cache)) $articles = unserialize(file_get_contents($cache));
 
 		// crawl the data from the web
@@ -217,12 +219,14 @@ class Service
 	 * Get an specific news to display
 	 *
 	 * @param String
+	 *
 	 * @return array
+	 * @throws \Exception
 	 */
 	private function story($query)
 	{
 		// get content from cache
-		$cache = Utils::getTempDir() . "granma_" . md5($query) . ".cache";
+		$cache = TEMP_PATH . "granma_" . md5($query) . ".cache";
 		if(file_exists($cache)) $story = unserialize(file_get_contents($cache));
 
 		// crawl the data from the web
@@ -248,7 +252,7 @@ class Service
 
 				// get the image
 				if (!empty($imgUrl)) {
-					$img = Utils::getTempDir() . Utils::generateRandomHash() . "." . pathinfo($imgUrl, PATHINFO_EXTENSION);
+					$img = TEMP_PATH . Utils::generateRandomHash() . "." . pathinfo($imgUrl, PATHINFO_EXTENSION);
 					file_put_contents($img, file_get_contents("http://www.granma.cu$imgUrl"));
 				}
 			}
