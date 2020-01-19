@@ -20,7 +20,7 @@ class Service
 	 */
 	public function _main(Request $request, Response &$response)
 	{
-	    $response->setCache('day');
+		$response->setCache('day');
 		$response->setLayout('granma.ejs');
 		$response->setTemplate('allStories.ejs', $this->allStories());
 	}
@@ -28,7 +28,7 @@ class Service
 	/**
 	 * Call to show the news
 	 *
-	 * @param \Apretaste\Request  $request
+	 * @param \Apretaste\Request $request
 	 * @param \Apretaste\Response $response
 	 *
 	 * @throws \Framework\Alert
@@ -36,14 +36,14 @@ class Service
 	public function _buscar(Request $request, Response &$response)
 	{
 		$buscar = $request->input->data->searchQuery;
-		$isCategory = $request->input->data->isCategory =='true';
+		$isCategory = $request->input->data->isCategory == 'true';
 
 		// no allow blank entries
-		if(empty($buscar)){
+		if (empty($buscar)) {
 			$response->setLayout('granma.ejs');
 			$response->setTemplate('text.ejs', [
 					'title' => 'Su busqueda parece estar en blanco',
-					'body'  => 'debe decirnos sobre que tema desea leer'
+					'body' => 'debe decirnos sobre que tema desea leer'
 			]);
 			return;
 		}
@@ -52,19 +52,19 @@ class Service
 		$articles = $this->search($buscar);
 
 		// error if the searche return empty
-		if(empty($articles)) {
+		if (empty($articles)) {
 			$response->setLayout('granma.ejs');
 			$response->setTemplate('text.ejs', [
 					'title' => 'Su busqueda parece estar en blanco',
-					'body'  => html_entity_decode('Su busqueda no gener&oacute; ning&uacute;n resultado. Por favor cambie los t&eacute;rminos de b&uacute;squeda e intente nuevamente.')
+					'body' => html_entity_decode('Su busqueda no gener&oacute; ning&uacute;n resultado. Por favor cambie los t&eacute;rminos de b&uacute;squeda e intente nuevamente.')
 			]);
 			return;
 		}
 
 		$content = [
-				'articles'   => $articles,
+				'articles' => $articles,
 				'isCategory' => $isCategory,
-				'search'     => $buscar
+				'search' => $buscar
 		];
 
 		$response->setLayout('granma.ejs');
@@ -85,7 +85,7 @@ class Service
 
 		// get the image if exist
 		$images = [];
-		if( ! empty($content['img'])) {
+		if (! empty($content['img'])) {
 			$images = [$content['img']];
 			$content['img'] = basename($content['img']);
 		}
@@ -109,7 +109,9 @@ class Service
 	{
 		// get content from cache
 		$cache = TEMP_PATH .'granma_'. md5($query) . date('Ymd') .'.cache';
-		if(file_exists($cache)) $articles = unserialize(file_get_contents($cache));
+		if (file_exists($cache)) {
+			$articles = unserialize(file_get_contents($cache));
+		}
 
 		// crawl the data from the web
 		else {
@@ -122,17 +124,19 @@ class Service
 				// only allow news, no media or gallery
 
 				/** @var \Symfony\Component\DomCrawler\Crawler $item */
-				if ($item->filter('.ico')->count() > 0) return;
+				if ($item->filter('.ico')->count() > 0) {
+					return;
+				}
 
 				// get data from each row
 				$title = $item->filter('h2 a')->text();
 				$info = $item->filter('p.g-story-meta')->text();
-				$info = explode('de',$info);
+				$info = explode('de', $info);
 				$day = trim($info[0]);
 				$month = trim($info[1]);
-				$info = explode('@',$info[2]);
+				$info = explode('@', $info[2]);
 				$year = trim($info[0]);
-				$info = explode('|',$info[1]);
+				$info = explode('|', $info[1]);
 				$hour = trim($info[0]);
 				$author = trim($info[1]);
 				$info = "$month $day, $year. $hour &bull; <i>$author</i>";
@@ -142,10 +146,10 @@ class Service
 
 				// store list of articles
 				$articles[] = [
-						'pubDate'     => $info,
+						'pubDate' => $info,
 						'description' => $description,
-						'title'       => $title,
-						'link'        => $link
+						'title' => $title,
+						'link' => $link
 				];
 			});
 
@@ -166,7 +170,9 @@ class Service
 	{
 		// get content from cache
 		$cache = TEMP_PATH .'granma_'. date('Ymd') .'.cache';
-		if(file_exists($cache)) $articles = unserialize(file_get_contents($cache));
+		if (file_exists($cache)) {
+			$articles = unserialize(file_get_contents($cache));
+		}
 
 		// crawl the data from the web
 		else {
@@ -176,7 +182,9 @@ class Service
 			$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
 			$articles = [];
-			if (!isset($content->channel)) return ['articles' => []];
+			if (!isset($content->channel)) {
+				return ['articles' => []];
+			}
 
 			foreach ($content->channel->item as $item) {
 				// get all parameters
@@ -185,7 +193,7 @@ class Service
 				$description = strip_tags($item->description);
 				setlocale(LC_ALL, 'es_ES.UTF-8');
 				$pubDate = $item->pubDate;
-				$pubDate = strftime('%B %d, %Y.',strtotime($pubDate)).' '.date_format((new DateTime($pubDate)),'h:i a');
+				$pubDate = strftime('%B %d, %Y.', strtotime($pubDate)).' '.date_format((new DateTime($pubDate)), 'h:i a');
 				$dc = $item->children('http://purl.org/dc/elements/1.1/');
 				$author = $dc->creator;
 
@@ -193,18 +201,20 @@ class Service
 				$category = [];
 				foreach ($item->category as $currCategory) {
 					$cat = (String) $currCategory;
-					if( ! in_array($cat, $category)) $category[] = $cat;
+					if (! in_array($cat, $category)) {
+						$category[] = $cat;
+					}
 				}
 
 				// get the article
 				$articles[] = [
-						'title'        => (String)$title,
-						'link'         => (String)$link,
-						'pubDate'      => (String)$pubDate,
-						'description'  => (String)$description,
-						'category'     => $category,
+						'title' => (String) $title,
+						'link' => (String) $link,
+						'pubDate' => (String) $pubDate,
+						'description' => (String) $description,
+						'category' => $category,
 						'categoryLink' => [],
-						'author'       => (String)$author
+						'author' => (String) $author
 				];
 			}
 
@@ -228,7 +238,9 @@ class Service
 	{
 		// get content from cache
 		$cache = TEMP_PATH .'granma_'. md5($query) .'.cache';
-		if(file_exists($cache)) $story = unserialize(file_get_contents($cache));
+		if (file_exists($cache)) {
+			$story = unserialize(file_get_contents($cache));
+		}
 
 		// crawl the data from the web
 		else {
@@ -266,12 +278,12 @@ class Service
 
 			// create a json object to send to the template
 			$story = [
-					'title'   => $title,
-					'intro'   => $intro,
-					'img'     => $img,
-					'imgAlt'  => $imgAlt,
+					'title' => $title,
+					'intro' => $intro,
+					'img' => $img,
+					'imgAlt' => $imgAlt,
 					'content' => $content,
-					'url'     => "http://www.granma.cu/$query"
+					'url' => "http://www.granma.cu/$query"
 			];
 
 			// create the cache
@@ -287,7 +299,8 @@ class Service
 	 * @param String
 	 * @return String
 	 */
-	private function urlSplit($url): string {
+	private function urlSplit($url): string
+	{
 		$url = explode('/', trim($url));
 		unset($url[0], $url[1], $url[2]);
 
