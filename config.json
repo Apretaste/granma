@@ -1,8 +1,9 @@
 {
-	"name":"granma",
-	"version":"2",
-	"description":"Muestra los titulares del Granma y permite leer las noticias publicadas en el Granma",
-	"category":"informativo",
-	"creator":"salvi@apretaste.com",
-	"listed":true
+	"name": "granma",
+	"caption": "Granma",
+	"description": "Muestra los titulares del Granma y permite leer las noticias publicadas en el Granma",
+	"category": "informativo",
+	"creator": "salvi@apretaste.com",
+	"listed": true,
+	"guest": true
 }
