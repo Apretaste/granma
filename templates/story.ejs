@@ -3,7 +3,7 @@
 		<h1><%= title %></h1>
 
 		<% if(img != "") { %>
-			<div class="center-align">	
+			<div class="center-align delete-if-no-image">
 				<img class="responsive-img" src="{{APP_IMAGE_PATH}}/<%= img %>" alt="<%= title %>">
 			</div>
 		<% } %>
