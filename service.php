@@ -191,7 +191,6 @@ class Service
 				$title = $item->title;
 				$link = $this->urlSplit($item->link);
 				$description = strip_tags($item->description);
-				setlocale(LC_ALL, 'es_ES.UTF-8');
 				$pubDate = $item->pubDate;
 				$pubDate = strftime('%B %d, %Y.', strtotime($pubDate)).' '.date_format((new DateTime($pubDate)), 'h:i a');
 				$dc = $item->children('http://purl.org/dc/elements/1.1/');
