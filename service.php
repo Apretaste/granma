@@ -61,19 +61,22 @@ class Service
 		// crawl the data from the web
 		else {
 			// create a crawler
-			$page = Crawler::get('http://www.granma.cu/feed');
-
-			$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
+			//$page = Crawler::get('http://www.granma.cu/feed');
+			$rss = Feed::loadRss('http://www.granma.cu/feed');
+			//$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
 
 			$articles = [];
-			if (!isset($content->channel)) {
+			/*if (!isset($content->channel)) {
 				return ['articles' => []];
-			}
-
-			foreach ($content->channel->item as $item) {
+			}*/
+			$creator = "dc:creator";
+			foreach ($rss->item as $item) {
+				$link = (string)$item->link;
+				$title = Database::escape(quoted_printable_encode(strip_tags((string)$item->title)));
+				$author = (string)$item->$creator;
 				// get all parameters
-				$title = $item->title;
-				$link = $this->urlSplit($item->link);
+				//$title = $item->title;
+				//$link = $this->urlSplit($item->link);
 				$description = strip_tags($item->description);
 				$pubDate = $item->pubDate;
 				$pubDate = strftime('%B %d, %Y.', strtotime($pubDate)).' '.date_format((new DateTime($pubDate)), 'h:i a');
