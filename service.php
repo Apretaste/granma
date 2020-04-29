@@ -95,7 +95,7 @@ class Service
 
 				// cut description by 200 chars
 				if (strlen($description) > 200) {
-					$description = substr($description, 0, 200) . '...';
+					$description = mb_substr($description, 0, 200) . '...';
 				}
 
 				// get the article
