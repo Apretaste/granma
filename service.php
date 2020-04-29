@@ -134,7 +134,7 @@ class Service
 
 		// crawl the data from the web
 		else {
-			Crawler::start("http://www.granma.cu/$query");
+			Crawler::start("$query");
 
 			// search for title
 			$title = Crawler::filter('div.g-story-meta h1.g-story-heading')->text();
