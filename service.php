@@ -4,6 +4,7 @@ use Framework\Crawler;
 use Apretaste\Request;
 use Apretaste\Response;
 use Apretaste\Challenges;
+use Framework\Database;
 use Framework\Utils;
 
 class Service
