@@ -32,7 +32,7 @@ class Service
 
 		// get the image if exist
 		$images = [];
-		if (! empty($content['img'])) {
+		if (!empty($content['img'])) {
 			$images = [$content['img']];
 			$content['img'] = basename($content['img']);
 		}
@@ -57,9 +57,7 @@ class Service
 		$cache = TEMP_PATH . 'cache/granma_' . date('Ymd') . '.cache';
 		if (file_exists($cache)) {
 			$articles = unserialize(file_get_contents($cache));
-		}
-
-		// crawl the data from the web
+		} // crawl the data from the web
 		else {
 			// create a crawler
 			//$page = Crawler::get('http://www.granma.cu/feed');
@@ -73,22 +71,22 @@ class Service
 			$creator = "dc:creator";
 			foreach ($rss->item as $item) {
 				$link = (string)$item->link;
-				$title = Database::escape(quoted_printable_encode(strip_tags((string)$item->title)));
+				$title = (string)$item->title;
 				$author = (string)$item->$creator;
 				// get all parameters
 				//$title = $item->title;
 				//$link = $this->urlSplit($item->link);
 				$description = strip_tags($item->description);
 				$pubDate = $item->pubDate;
-				$pubDate = strftime('%B %d, %Y.', strtotime($pubDate)).' '.date_format((new DateTime($pubDate)), 'h:i a');
+				$pubDate = strftime('%B %d, %Y.', strtotime($pubDate)) . ' ' . date_format((new DateTime($pubDate)), 'h:i a');
 				$dc = $item->children('http://purl.org/dc/elements/1.1/');
 				$author = $dc->creator;
 
 				// get all the categories
 				$category = [];
 				foreach ($item->category as $currCategory) {
-					$cat = (String) $currCategory;
-					if (! in_array($cat, $category)) {
+					$cat = (String)$currCategory;
+					if (!in_array($cat, $category)) {
 						$category[] = $cat;
 					}
 				}
@@ -100,13 +98,13 @@ class Service
 
 				// get the article
 				$articles[] = [
-					'title' => (String) $title,
-					'link' => (String) $link,
-					'pubDate' => (String) $pubDate,
-					'description' => (String) $description,
+					'title' => (String)$title,
+					'link' => (String)$link,
+					'pubDate' => (String)$pubDate,
+					'description' => (String)$description,
 					'category' => $category,
 					'categoryLink' => [],
-					'author' => (String) $author
+					'author' => (String)$author
 				];
 			}
 
@@ -130,9 +128,7 @@ class Service
 		$cache = TEMP_PATH . 'cache/granma_' . md5($query) . '.cache';
 		if (file_exists($cache)) {
 			$story = unserialize(file_get_contents($cache));
-		}
-
-		// crawl the data from the web
+		} // crawl the data from the web
 		else {
 			Crawler::start("$query");
 
@@ -141,7 +137,7 @@ class Service
 
 			// get the intro
 			$titleObj = Crawler::filter('div.g-story-meta p.g-story-description');
-			$intro = $titleObj->count() > 0 ? $titleObj->text() :'';
+			$intro = $titleObj->count() > 0 ? $titleObj->text() : '';
 
 			// get the images
 			$imageObj = Crawler::filter('div.image img');
