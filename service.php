@@ -60,16 +60,19 @@ class Service
 		} // crawl the data from the web
 		else {
 			// create a crawler
-			//$page = Crawler::get('http://www.granma.cu/feed');
-			$rss = Feed::loadRss('http://www.granma.cu/feed');
-			//$content = simplexml_load_string($page, null, LIBXML_NOCDATA);
+			$page = Crawler::get('http://www.granma.cu/feed');
+			$page = preg_replace('/&(?!#?[a-z0-9]+;)/', '&amp;', $page);
+			$content = simplexml_load_string($page);
 
 			$articles = [];
-			/*if (!isset($content->channel)) {
+			if (!isset($content->channel)) {
 				return ['articles' => []];
-			}*/
+			}
+
+			//$rss = Feed::loadRss('http://www.granma.cu/feed');
+
 			$creator = "dc:creator";
-			foreach ($rss->item as $item) {
+			foreach ($content->channel->item as $item) {
 				$link = (string)$item->link;
 				$title = (string)$item->title;
 				$author = (string)$item->$creator;
@@ -85,7 +88,7 @@ class Service
 				// get all the categories
 				$category = [];
 				foreach ($item->category as $currCategory) {
-					$cat = (String)$currCategory;
+					$cat = (string)$currCategory;
 					if (!in_array($cat, $category)) {
 						$category[] = $cat;
 					}
@@ -98,13 +101,13 @@ class Service
 
 				// get the article
 				$articles[] = [
-					'title' => (String)$title,
-					'link' => (String)$link,
-					'pubDate' => (String)$pubDate,
-					'description' => (String)$description,
+					'title' => (string)$title,
+					'link' => (string)$link,
+					'pubDate' => (string)$pubDate,
+					'description' => (string)$description,
 					'category' => $category,
 					'categoryLink' => [],
-					'author' => (String)$author
+					'author' => (string)$author
 				];
 			}
 
